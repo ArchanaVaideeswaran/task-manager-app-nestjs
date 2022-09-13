@@ -23,8 +23,8 @@
   "dependencies": {
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
-    "@nestjs/jwt": "github:nestjs/jwt",
-    "@nestjs/passport": "github:nestjs/passport",
+    "@nestjs/jwt": "^9.0.0",
+    "@nestjs/passport": "^9.0.0",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/typeorm": "^9.0.1",
     "bcrypt": "^5.0.1",

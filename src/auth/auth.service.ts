@@ -4,12 +4,16 @@ import { Repository } from 'typeorm';
 import { AuthCredentialsDto } from './dto/auth-credentials.dto';
 import { User } from './user.entity';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { JwtPayload } from './jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        @InjectRepository(User) private userRepository: Repository<User>
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
+        private jwtService: JwtService
     ) {}
 
     async signUp(authCredentialsDto: AuthCredentialsDto): Promise<void> {
@@ -34,7 +38,27 @@ export class AuthService {
         }
     }
 
-    async signIn(authCredentialsDto: AuthCredentialsDto): Promise<string> {
+    async signIn(authCredentialsDto: AuthCredentialsDto): Promise<{ accessToken: string }> {
+        const username = await this.validateUserPassword(authCredentialsDto);
+
+        if(!username) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const payload: JwtPayload = { username };
+
+        const accessToken = await this.jwtService.sign(payload);
+
+        return { accessToken };
+    }
+
+    private async hashPassword(password: string, salt: string): Promise<string> {
+        return bcrypt.hash(password, salt);
+    }
+
+    private async validateUserPassword(
+        authCredentialsDto: AuthCredentialsDto
+    ): Promise<string> {
         const { username, password } = authCredentialsDto;
 
         const user = await this.userRepository.findOneBy({ username });
@@ -42,12 +66,7 @@ export class AuthService {
         if(user && await user.validatePassword(password)) {
             return user.username;
         }
-        else {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-    }
 
-    private async hashPassword(password: string, salt: string): Promise<string> {
-        return bcrypt.hash(password, salt);
+        return null;
     }
 }
